@@ -54,10 +54,7 @@ const connectToDatabase = async () => {
   if (isConnected) return;
 
   try {
-    await mongoose.connect(process.env.MONGO_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.MONGO_URL);
     isConnected = true;
     console.log('MongoDB connected');
   } catch (error) {
@@ -70,10 +67,6 @@ app.use('/api/user', userRouter);
 app.use('/api/salad', saladRouter);
 app.use('/api/subscription', subscriptionRouter);
 
-
-app.get("/", (req, res) => {
-  res.send("API is running...");
-});
 app.get('/favicon.ico', (req, res) => res.status(204));
 
 const handler = serverless(app);
