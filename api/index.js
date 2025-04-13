@@ -30,49 +30,55 @@
 
 
 // startServer();
-
-import { config } from "dotenv";
+import { config } from 'dotenv';
 config();
-import express from "express";
-import cors from "cors";
-import mongoose from "mongoose";
-import helmet from "helmet";
-import userRouter from "../routes/user.js";
-import saladRouter from "../routes/salads.js";
-import subscriptionRouter from "../routes/subscription.js";
-import serverless from "serverless-http"; // 👈 Important!
+
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import mongoose from 'mongoose';
+import serverless from 'serverless-http';
+
+import userRouter from '../routes/user.js';
+import saladRouter from '../routes/salads.js';
+import subscriptionRouter from '../routes/subscription.js';
 
 const app = express();
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(helmet());
 
-// Mongo Connection
 let isConnected = false;
-const connectToMongo = async () => {
-  if (!isConnected) {
-    await mongoose.connect("mongodb://localhost:27017/subscription_management");
+
+const connectToDatabase = async () => {
+  if (isConnected) return;
+
+  try {
+    await mongoose.connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
     isConnected = true;
-    console.log("✅ MongoDB connected");
+    console.log('MongoDB connected');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw error;
   }
 };
 
-app.use(async (req, res, next) => {
-  await connectToMongo();
-  next();
-});
+app.use('/api/user', userRouter);
+app.use('/api/salad', saladRouter);
+app.use('/api/subscription', subscriptionRouter);
 
-// Routes
-app.use("/api/user", userRouter);
-app.use("/api/salad", saladRouter);
-app.use("/api/subscription", subscriptionRouter);
 
-// Default Route (handle "/")
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
+app.get('/favicon.ico', (req, res) => res.status(204));
 
-// 👇 Export as a Vercel serverless handler
-export default serverless(app);
+const handler = serverless(app);
+
+export default async function mainHandler(req, res) {
+  await connectToDatabase();
+  return handler(req, res);
+}
