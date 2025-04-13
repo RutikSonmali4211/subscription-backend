@@ -31,45 +31,44 @@
 
 // startServer();
 
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import mongoose from 'mongoose';
-import serverless from 'serverless-http';
+import { config } from "dotenv";
+import express from "express";
+import cors from "cors";
+import mongoose from "mongoose";
+import helmet from "helmet";
+import userRouter from "../routes/user.js";
+import saladRouter from "../routes/salads.js";
+import subscriptionRouter from "../routes/subscription.js";
 
-import userRouter from '../routes/user.js';
-import saladRouter from '../routes/salads.js';
-import subscriptionRouter from '../routes/subscription.js';
+config();
 
 const app = express();
+
+// Setup middlewares
 app.use(cors());
 app.use(express.json());
 app.use(helmet());
 
+// Connect MongoDB once
 let isConnected = false;
-
-const connectToDatabase = async () => {
-  if (isConnected) return;
-
-  try {
+const connectToMongo = async () => {
+  if (!isConnected) {
     await mongoose.connect(process.env.MONGO_URL);
     isConnected = true;
-    console.log('MongoDB connected');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    throw error;
+    console.log("✅ MongoDB connected");
   }
 };
 
-app.use('/api/user', userRouter);
-app.use('/api/salad', saladRouter);
-app.use('/api/subscription', subscriptionRouter);
+// Middleware to ensure DB is connected before handling requests
+app.use(async (req, res, next) => {
+  await connectToMongo();
+  next();
+});
 
-app.get('/favicon.ico', (req, res) => res.status(204));
+// Routes
+app.use("/api/user", userRouter);
+app.use("/api/salad", saladRouter);
+app.use("/api/subscription", subscriptionRouter);
 
-const handler = serverless(app);
-
-export default async function mainHandler(req, res) {
-  await connectToDatabase();
-  return handler(req, res);
-}
+// Export the app for Vercel to use as a serverless function
+export default app;
