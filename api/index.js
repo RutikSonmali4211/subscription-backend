@@ -39,17 +39,18 @@ import helmet from "helmet";
 import userRouter from "../routes/user.js";
 import saladRouter from "../routes/salads.js";
 import subscriptionRouter from "../routes/subscription.js";
+import serverless from "serverless-http"; // 👈 Important!
 
 config();
 
 const app = express();
 
-// Setup middlewares
+// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(helmet());
 
-// Connect MongoDB once
+// Mongo Connection
 let isConnected = false;
 const connectToMongo = async () => {
   if (!isConnected) {
@@ -59,7 +60,6 @@ const connectToMongo = async () => {
   }
 };
 
-// Middleware to ensure DB is connected before handling requests
 app.use(async (req, res, next) => {
   await connectToMongo();
   next();
@@ -70,5 +70,10 @@ app.use("/api/user", userRouter);
 app.use("/api/salad", saladRouter);
 app.use("/api/subscription", subscriptionRouter);
 
-// Export the app for Vercel to use as a serverless function
-export default app;
+// Default Route (handle "/")
+app.get("/", (req, res) => {
+  res.send("API is running...");
+});
+
+// 👇 Export as a Vercel serverless handler
+export default serverless(app);
