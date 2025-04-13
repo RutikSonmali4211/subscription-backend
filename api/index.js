@@ -32,6 +32,7 @@
 // startServer();
 
 import { config } from "dotenv";
+config();
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
@@ -40,8 +41,6 @@ import userRouter from "../routes/user.js";
 import saladRouter from "../routes/salads.js";
 import subscriptionRouter from "../routes/subscription.js";
 import serverless from "serverless-http"; // 👈 Important!
-
-config();
 
 const app = express();
 
@@ -54,7 +53,7 @@ app.use(helmet());
 let isConnected = false;
 const connectToMongo = async () => {
   if (!isConnected) {
-    await mongoose.connect(process.env.MONGO_URL);
+    await mongoose.connect("mongodb://localhost:27017/subscription_management");
     isConnected = true;
     console.log("✅ MongoDB connected");
   }
