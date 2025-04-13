@@ -33,6 +33,7 @@
 
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import mongoose from 'mongoose';
 import serverless from 'serverless-http';
 
@@ -43,6 +44,7 @@ import subscriptionRouter from '../routes/subscription.js';
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(helmet());
 
 let isConnected = false;
 
@@ -50,7 +52,7 @@ const connectToDatabase = async () => {
   if (isConnected) return;
 
   try {
-    await mongoose.connect("mongodb://localhost:27017/subscription_management");
+    await mongoose.connect(process.env.MONGO_URL);
     isConnected = true;
     console.log('MongoDB connected');
   } catch (error) {
