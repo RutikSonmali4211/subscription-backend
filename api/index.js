@@ -30,12 +30,44 @@
 
 
 // startServer();
+
 import express from 'express';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import serverless from 'serverless-http';
+
+import userRouter from '../routes/user.js';
+import saladRouter from '../routes/salads.js';
+import subscriptionRouter from '../routes/subscription.js';
 
 const app = express();
+app.use(cors());
+app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.json({ message: 'Hello from Express on Vercel!' });
-});
+let isConnected = false;
 
-export default app;
+const connectToDatabase = async () => {
+  if (isConnected) return;
+
+  try {
+    await mongoose.connect("mongodb://localhost:27017/subscription_management");
+    isConnected = true;
+    console.log('MongoDB connected');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw error;
+  }
+};
+
+app.use('/api/user', userRouter);
+app.use('/api/salad', saladRouter);
+app.use('/api/subscription', subscriptionRouter);
+
+app.get('/favicon.ico', (req, res) => res.status(204));
+
+const handler = serverless(app);
+
+export default async function mainHandler(req, res) {
+  await connectToDatabase();
+  return handler(req, res);
+}
